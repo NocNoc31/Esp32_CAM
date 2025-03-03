@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eyes Protect System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header><h2>Eyes Protect System</h2></header>
+
+    <p class="time_error">Time Error: <span id="time_error">0</span> seconds</p>
+
+    <div class="container">
+        <div class="input-group">
+            <label for="set_time">THỜI GIAN NGHỈ:</label>
+            <input type="text" id="set_time">
+            <button id="set_time_btn">OK</button>
+        </div>
+
+        <div class="input-group">
+            <label for="set_distance">KHOẢNG CÁCH MẮT:</label>
+            <input type="text" id="set_distance">
+            <button id="set_distance_btn">OK</button>
+        </div>
+
+        <h2 id="output">Monitor</h2>
+
+        <div class="input-group">
+            <label for="distance_now">KHOẢNG CÁCH HIỆN TẠI:</label>
+            <output id="distance_now">0</output>
+        </div>
+
+        <div class="input-group">
+            <label for="so_lan_nhac">SỐ LẦN NHẮC:</label>
+            <output id="so_lan_nhac">0</output>
+        </div>
+
+        <div class="input-group">
+            <button id="capture_btn">Chụp Ảnh</button>
+            <button id="video_btn">Camera</button>
+        </div>
+
+        <div id="chartContainer">
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Modal Popup -->
+    <div id="popupModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p id="popupMessage">Thông báo</p>
+        </div>
+    </div>
+
+
+    <!-- Modal Image -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <img id="capturedImage" src="" alt="Captured Image" style="max-width: 50%; height: auto; border: 1px solid #ccc;">
+        </div>
+    </div>
+
+    <!-- Modal Video -->
+    <div id="videoModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <button id="start_btn">Start Streaming</button>
+            <button id="stop_btn">Stop Streaming</button>
+            <img id="capturedVideo" src="" alt="" style="max-width: 50%; height: auto; border: 1px solid #ccc">
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
