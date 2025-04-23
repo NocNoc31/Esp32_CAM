@@ -1,7 +1,10 @@
+
 // Kết nối WebSocket
 function createWebSocket() {
     const socket = new WebSocket("ws://192.168.4.1:81");
-    
+    // const socket = new WebSocket("ws://localhost:8765");
+
+  
     const reconnectConfig = {
         maxAttempts: 5,
         currentAttempts: 0,
@@ -45,6 +48,10 @@ let distanceInput = 10;
 let timeInput = 5;
 let timeErrorCounter = 0;
 let isCountingTimeError = false;
+let latestImageBlob = null;
+// Mảng lưu trữ lịch sử khoảng cách
+let distanceHistory = [];
+
 
 const ctx = document.getElementById('chart').getContext('2d');
 const chart = new Chart(ctx, {
@@ -61,19 +68,91 @@ const chart = new Chart(ctx, {
     options: { scales: { y: { beginAtZero: true } } }
 });
 
+function formatTimestamp(date) {
+    const pad = (num) => String(num).padStart(2, '0');
+    return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+// Lưu trạng thái
+function saveState() {
+    const state = {
+        distanceInput,
+        timeInput
+    };
+    localStorage.setItem('systemState', JSON.stringify(state));
+}
+
+// Xuất mảng khoảng cách sang file CSV
+function exportToCSV() {
+    if (distanceHistory.length === 0) {
+        showPopup("Không có dữ liệu khoảng cách để xuất!");
+        return;
+    }
+
+    // Tạo nội dung CSV
+    const csvContent = [
+        "Timestamp,Distance (cm)", // Tiêu đề
+        ...distanceHistory.map((entry) => `${entry.timestamp},${entry.distance}`)
+    ].join("\n");
+
+    // Tạo Blob và tải file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `distance_history_${formatTimestamp(new Date()).replace(/[: ]/g, "-")}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showPopup("Đã xuất dữ liệu khoảng cách sang file CSV!");
+}
+
+// Đọc trạng thái thủ công
+function readSavedState() {
+    const savedState = localStorage.getItem('systemState');
+    if (savedState) {
+        const state = JSON.parse(savedState);
+        showPopup(
+            `Khoảng cách: ${state.distanceInput || 'Chưa thiết lập'} cm\n` +
+            `Thời gian: ${state.timeInput || 'Chưa thiết lập'} giây`
+        );
+    } else {
+        showPopup('Chưa có dữ liệu được lưu!');
+    }
+}
+
+function downloadImage(blob, timestamp) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `image_${timestamp.replace(/[:/ ]/g, "-")}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showPopup(`Đã tải ảnh: image_${timestamp.replace(/[:/ ]/g, "-")}.jpg`);
+}
+
 // Xử lý dữ liệu nhận từ WebSocket
 socket.onmessage = function (event) {
     if (event.data instanceof Blob) {
+        const timestamp = formatTimestamp(new Date());
         const imageUrl = URL.createObjectURL(event.data);
-        if (isStreaming) {
-            document.getElementById("capturedVideo").src = imageUrl;
-        } else {
-            document.getElementById("capturedImage").src = imageUrl;
-        }
+        latestImageBlob = event.data;
+        document.getElementById("capturedImage").src = imageUrl;
+        console.log("Updated capturedImage");
+        downloadImage(latestImageBlob, timestamp);
     } else {
         const distance = parseInt(event.data);
         if (!isNaN(distance)) {
             document.getElementById("distance_now").textContent = distance;
+            // Lưu khoảng cách vào mảng với timestamp
+            distanceHistory.push({
+                timestamp: formatTimestamp(new Date()),
+                distance: distance
+            });
             updateChart(distance);
         }
     }
@@ -116,6 +195,7 @@ function updateChart(newDistance) {
 document.getElementById('set_distance_btn').addEventListener('click', () => {
     distanceInput = parseFloat(document.getElementById('set_distance').value);
     if (!isNaN(distanceInput)) {
+        saveState();
         showPopup(`Khoảng cách cảnh báo: ${distanceInput} cm`);
     } else {
         showPopup('Vui lòng nhập giá trị khoảng cách hợp lệ!');
@@ -126,9 +206,35 @@ document.getElementById('set_distance_btn').addEventListener('click', () => {
 document.getElementById('set_time_btn').addEventListener('click', () => {
     timeInput = parseFloat(document.getElementById('set_time').value);
     if (!isNaN(timeInput)) {
+        saveState();
         showPopup(`Thời gian cảnh báo: ${timeInput} giây`);
     } else {
         showPopup('Vui lòng nhập giá trị thời gian hợp lệ!');
+    }
+});
+
+// Reset trạng thái
+document.getElementById('reset_btn').addEventListener('click', () => {
+    localStorage.removeItem('systemState');
+    distanceInput = 10;
+    timeInput = 5;
+    document.getElementById('set_distance').value = '';
+    document.getElementById('set_time').value = '';
+    showPopup('Đã đặt lại cài đặt!');
+});
+
+// Gắn sự kiện đọc trạng thái
+document.getElementById('read_state_btn').addEventListener('click', readSavedState);
+
+// Khôi phục trạng thái khi tải trang
+window.addEventListener('load', () => {
+    const savedState = localStorage.getItem('systemState');
+    if (savedState) {
+        const state = JSON.parse(savedState);
+        distanceInput = state.distanceInput || 10;
+        timeInput = state.timeInput || 5;
+        document.getElementById('set_distance').value = distanceInput;
+        document.getElementById('set_time').value = timeInput;
     }
 });
 
@@ -145,47 +251,29 @@ function showPopup(message) {
 }
 
 // Xử lý chụp ảnh
-document.getElementById('capture_btn').addEventListener('click', () => {
+document.getElementById('capture_btn').addEventListener('click', async () => {
     isStreaming = false;
     if (socket.readyState === WebSocket.OPEN) {
         socket.send("CAPTURE");
         document.getElementById("imageModal").style.display = "block";
-        console.log("Chụp ảnh thành công");
+        console.log("Sent CAPTURE command");
+        await new Promise(resolve => setTimeout(resolve, 3000));
     } else {
-        console.error("WebSocket chưa kết nối, không thể gửi lệnh CAPTURE!");
-    }
-});
-
-// Mở cửa sổ quay video
-document.getElementById('video_btn').addEventListener('click', () => {
-    document.getElementById("videoModal").style.display = "block";
-});
-
-// Bắt đầu quay video
-document.getElementById('start_btn').addEventListener('click', () => {
-    isStreaming = true;
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send("START_RECORD");
-        console.log("Bắt đầu quay video");
-        showPopup("Đang quay video...");
-    } else {
-        console.error("WebSocket chưa kết nối, không thể gửi lệnh START_RECORD!");
-    }
-});
-
-// Dừng quay video
-document.getElementById('stop_btn').addEventListener('click', () => {
-    isStreaming = false;
-    if (socket.readyState === WebSocket.OPEN) {
-        socket.send("STOP_RECORD");
-        console.log("Dừng quay video");
-        showPopup("Dừng quay video!");
-    } else {
-        console.error("WebSocket chưa kết nối, không thể gửi lệnh STOP_RECORD!");
+        console.error("WebSocket not connected, cannot send CAPTURE!");
     }
 });
 
 // Đóng modal khi nhấn 'X'
 document.querySelectorAll(".close").forEach((btn) => {
     btn.addEventListener("click", () => btn.parentElement.parentElement.style.display = "none");
+});
+
+// Xuất dữ liệu khoảng cách
+document.getElementById('export_btn').addEventListener('click', () => {
+    exportToCSV();
+});
+
+// Xuất dữ liệu khi đóng trang
+window.addEventListener('beforeunload', () => {
+    exportToCSV();
 });

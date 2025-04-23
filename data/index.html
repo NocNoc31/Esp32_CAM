@@ -14,13 +14,13 @@
 
     <div class="container">
         <div class="input-group">
-            <label for="set_time">THỜI GIAN NGHỈ:</label>
+            <label for="set_time">THỜI GIAN CHO PHÉP:</label>
             <input type="text" id="set_time">
             <button id="set_time_btn">OK</button>
         </div>
 
         <div class="input-group">
-            <label for="set_distance">KHOẢNG CÁCH MẮT:</label>
+            <label for="set_distance">KHOẢNG CÁCH TỐI THIỂU:</label>
             <input type="text" id="set_distance">
             <button id="set_distance_btn">OK</button>
         </div>
@@ -39,9 +39,14 @@
 
         <div class="input-group">
             <button id="capture_btn">Chụp Ảnh</button>
-            <button id="video_btn">Camera</button>
+            <button id="read_state_btn">Xem giá trị đã lưu</button>
+            <button id="reset_btn">Đặt lại cài đặt</button>
         </div>
 
+        <div class="input-group">
+            <button id="export_btn">Export Distance Data</button>
+        </div>
+   
         <div id="chartContainer">
             <canvas id="chart"></canvas>
         </div>
@@ -61,16 +66,6 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <img id="capturedImage" src="" alt="Captured Image" style="max-width: 50%; height: auto; border: 1px solid #ccc;">
-        </div>
-    </div>
-
-    <!-- Modal Video -->
-    <div id="videoModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <button id="start_btn">Start Streaming</button>
-            <button id="stop_btn">Stop Streaming</button>
-            <img id="capturedVideo" src="" alt="" style="max-width: 50%; height: auto; border: 1px solid #ccc">
         </div>
     </div>
 

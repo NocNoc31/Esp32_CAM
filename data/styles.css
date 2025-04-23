@@ -73,9 +73,9 @@ h2:hover {
 /* Nhóm input và output */
 .input-group {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 35px;
 }
 
 label, p {
@@ -228,6 +228,13 @@ button:hover {
 
 #ok_btn:hover {
     background-color: #00ccaa;
+}
+
+.data_button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
 }
 
 /* Modal Video */
